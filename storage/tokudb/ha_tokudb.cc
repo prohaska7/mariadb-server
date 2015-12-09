@@ -6403,8 +6403,8 @@ THR_LOCK_DATA **ha_tokudb::store_lock(THD * thd, THR_LOCK_DATA ** to, enum thr_l
                 lock_type = TL_WRITE_ALLOW_WRITE;
             } else if ((sql_command == SQLCOM_OPTIMIZE || sql_command == SQLCOM_CREATE_TABLE || sql_command == SQLCOM_INSERT_SELECT)
                        && lock_type == TL_READ_NO_INSERT) {
-                // hot optimize table
-                // allow concurrent writes to source tabes of 'create select' and 'insert select' statements.  see innodb::store_lock.
+                // allow concurrent writes with optimize table AND
+                // allow concurrent writes of source tables with 'create select' and 'insert select' statements.  see innodb::store_lock.
                 lock_type = TL_READ;
             }
         }
