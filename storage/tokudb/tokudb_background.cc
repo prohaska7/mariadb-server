@@ -68,7 +68,8 @@ void job_manager_t::destroy() {
     while (_background_jobs.size()) {
         _mutex.lock();
         job_t* job = _background_jobs.front();
-        cancel(job);
+        if (!job->cancelled())
+            cancel(job);
         _background_jobs.pop_front();
         delete job;
         _mutex.unlock();
