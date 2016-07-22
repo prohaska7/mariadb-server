@@ -29,9 +29,9 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 
 #include "hatoku_defines.h"
 
-#define TOKU_INCLUDE_BACKTRACE 0
+#define TOKU_INCLUDE_BACKTRACE 1
 #if TOKU_INCLUDE_BACKTRACE
-static void tokudb_backtrace(void);
+void tokudb_backtrace(void);
 #endif
 
 // tokudb debug tracing for tokudb_debug declared in tokudb_sysvars.h/.cc

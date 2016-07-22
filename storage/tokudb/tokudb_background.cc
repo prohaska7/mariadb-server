@@ -34,14 +34,19 @@ namespace background {
 std::atomic<uint64_t> job_manager_t::job_t::_next_id(1);
 
 job_manager_t::job_t::job_t(bool user_scheduled) :
+
     _running(false),
     _cancelled(false),
     _id(_next_id++),
     _user_scheduled(user_scheduled),
     _scheduled_time(::time(0)),
     _started_time(0) {
+    fprintf(stderr, "%s:%u %s %p %u\n", __FILE__, __LINE__, __FUNCTION__, this, user_scheduled);
+    tokudb_backtrace();
 }
 job_manager_t::job_t::~job_t() {
+    fprintf(stderr, "%s:%u %s %p\n", __FILE__, __LINE__, __FUNCTION__, this);
+    tokudb_backtrace();
 }
 void* job_manager_t::operator new(size_t sz) {
     return tokudb::memory::malloc(sz, MYF(MY_WME|MY_ZEROFILL|MY_FAE));
@@ -67,6 +72,7 @@ void job_manager_t::destroy() {
 
     while (_background_jobs.size()) {
         _mutex.lock();
+        assert_debug(_background_jobs.size() > 0);
         job_t* job = _background_jobs.front();
         cancel(job);
         _background_jobs.pop_front();
@@ -114,6 +120,8 @@ bool job_manager_t::run_job(job_t* newjob, bool background) {
         }
     }
 
+    fprintf(stderr, "%s:%u %s %p %u\n", __FILE__, __LINE__, __FUNCTION__, newjob, background);
+    tokudb_backtrace();
     if (background) {
         _background_jobs.push_back(newjob);
         _sem.signal();

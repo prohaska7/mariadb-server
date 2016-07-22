@@ -27,6 +27,7 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #define _TOKUDB_BACKGROUND_H
 
 #include "hatoku_hton.h"
+#include "tokudb_debug.h"
 #include <atomic>
 #include <list>
 
@@ -171,6 +172,11 @@ bool initialize();
 bool destroy();
 
 inline void job_manager_t::job_t::run() {
+    {
+        bool my_running = _running; bool my_cancelled = _cancelled;
+        fprintf(stderr, "%s:%u %s %p %u %u\n", __FILE__, __LINE__, __FUNCTION__, this, my_running, my_cancelled);
+        tokudb_backtrace();
+    }
     if (!_cancelled) {
         _running = true;
         _started_time = ::time(0);
@@ -179,13 +185,26 @@ inline void job_manager_t::job_t::run() {
     }
 }
 inline void job_manager_t::job_t::cancel() {
-    _cancelled = true;
-    if (_running)
-        on_cancel();
-    while (_running) tokudb::time::sleep_microsec(500000);
-    destroy();
+    {
+        bool my_running = _running; bool my_cancelled = _cancelled;
+        fprintf(stderr, "%s:%u %s %p %u %u\n", __FILE__, __LINE__, __FUNCTION__, this, my_running, my_cancelled);
+        tokudb_backtrace();
+    }
+    if (1) assert_debug(!_cancelled);
+    if (!_cancelled) {
+        _cancelled = true;
+        if (_running)
+            on_cancel();
+        while (_running) tokudb::time::sleep_microsec(500000);
+        destroy();
+    }
 }
 void job_manager_t::job_t::destroy() {
+    {
+        bool my_running = _running; bool my_cancelled = _cancelled;
+        fprintf(stderr, "%s:%u %s %p %u %u\n", __FILE__, __LINE__, __FUNCTION__, this, my_running, my_cancelled);
+        tokudb_backtrace();
+    }
     on_destroy();
 }
 inline bool job_manager_t::job_t::running() const {
