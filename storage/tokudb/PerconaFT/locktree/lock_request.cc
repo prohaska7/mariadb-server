@@ -237,16 +237,20 @@ int lock_request::wait(uint64_t wait_time_ms, uint64_t killed_time_ms,
     toku_mutex_lock(&m_info->mutex);
 
     if (m_state == state::PENDING) {
-        GrowableArray<TXNID> conflicts_collector;
-
-        conflicts_collector.init();
-        retry(&conflicts_collector);
-        if (m_state != state::PENDING) {
-            fprintf(stderr, "%s %u %s retry %p %" PRIu64 " worked\n", __FILE__, __LINE__, "lock_request::wait", this, m_txnid);
+        if (killed_callback && killed_callback()) {
+            fprintf(stderr, "%s %u %s %p killed\n", __FILE__, __LINE__, "lock_request::wait", this);
+            remove_from_lock_requests();
+            complete(DB_LOCK_NOTGRANTED);
+        } else {
+            GrowableArray<TXNID> conflicts_collector;
+            conflicts_collector.init();
+            retry(&conflicts_collector);
+            if (m_state != state::PENDING) {
+                fprintf(stderr, "%s %u %s retry %p %" PRIu64 " worked\n", __FILE__, __LINE__, "lock_request::wait", this, m_txnid);
+            }
+            report_waits(&conflicts_collector, lock_wait_callback);
+            conflicts_collector.deinit();
         }
-
-        report_waits(&conflicts_collector, lock_wait_callback);
-        conflicts_collector.deinit();
     }
 
     while (m_state == state::PENDING) {
