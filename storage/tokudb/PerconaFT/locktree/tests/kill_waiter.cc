@@ -13,7 +13,7 @@
 namespace toku {
 
 const uint64_t my_lock_wait_time = 1000 * 1000;
-const uint64_t my_killed_time = 100;
+const uint64_t my_killed_time = 500 * 1000;
 const int n_locks = 4;
 
 static int my_killed_callback(void) {
@@ -44,7 +44,7 @@ static void test_kill_waiter(void) {
     DICTIONARY_ID dict_id = { 1 };
     locktree *lt = mgr.get_lt(dict_id, dbt_comparator, nullptr);
 
-    const DBT *one = get_dbt(1);    
+    const DBT *one = get_dbt(1);
 
     lock_request locks[n_locks];
     std::thread waiters[n_locks-1];
@@ -72,8 +72,9 @@ static void test_kill_waiter(void) {
         assert(!done[i]);
     }
 
+    sleep(1);
     for (int i = 0; i < n_locks-1; i++) {
-        mgr.kill_waiter(&waiters[i], false);
+        mgr.kill_waiter(&waiters[i]);
         while (!done[i]) sleep(1);
         waiters[i].join();
         for (int j = i+1; j < n_locks-1; j++)
