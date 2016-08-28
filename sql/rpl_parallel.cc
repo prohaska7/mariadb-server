@@ -111,9 +111,6 @@ handle_queued_pos_update(THD *thd, rpl_parallel_thread::queued_event *qev)
   Wait for any pending deadlock kills. Since deadlock kills happen
   asynchronously, we need to be sure they will be completed before starting a
   new transaction. Otherwise the new transaction might suffer a spurious kill.
-
-  Note that we will not get signalled on the condition here, we will be woken
-  by THD::awake().
 */
 static void
 wait_for_pending_deadlock_kill(THD *thd, rpl_group_info *rgi)
