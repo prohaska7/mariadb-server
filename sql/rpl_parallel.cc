@@ -111,20 +111,17 @@ handle_queued_pos_update(THD *thd, rpl_parallel_thread::queued_event *qev)
   Wait for any pending deadlock kills. Since deadlock kills happen
   asynchronously, we need to be sure they will be completed before starting a
   new transaction. Otherwise the new transaction might suffer a spurious kill.
-
-  Note that we will not get signalled on the condition here, we will be woken
-  by THD::awake().
 */
 static void
 wait_for_pending_deadlock_kill(THD *thd, rpl_group_info *rgi)
 {
   PSI_stage_info old_stage;
 
-  mysql_mutex_lock(&thd->LOCK_thd_data);
-  thd->ENTER_COND(&thd->COND_wakeup_ready, &thd->LOCK_thd_data,
+  mysql_mutex_lock(&thd->LOCK_wakeup_ready);
+  thd->ENTER_COND(&thd->COND_wakeup_ready, &thd->LOCK_wakeup_ready,
                   &stage_waiting_for_deadlock_kill, &old_stage);
   while (rgi->killed_for_retry == rpl_group_info::RETRY_KILL_PENDING)
-    mysql_cond_wait(&thd->COND_wakeup_ready, &thd->LOCK_thd_data);
+    mysql_cond_wait(&thd->COND_wakeup_ready, &thd->LOCK_wakeup_ready);
   thd->EXIT_COND(&old_stage);
 }
 

@@ -347,13 +347,17 @@ handle_slave_background(void *arg __attribute__((unused)))
     while (kill_list)
     {
       slave_background_kill_t *p = kill_list;
+      THD *to_kill= p->to_kill;
       kill_list= p->next;
 
-      mysql_mutex_lock(&p->to_kill->LOCK_thd_data);
-      p->to_kill->rgi_slave->killed_for_retry=
+      mysql_mutex_lock(&to_kill->LOCK_thd_data);
+      to_kill->awake(KILL_CONNECTION);
+      mysql_mutex_unlock(&to_kill->LOCK_thd_data);
+      mysql_mutex_lock(&to_kill->LOCK_wakeup_ready);
+      to_kill->rgi_slave->killed_for_retry=
         rpl_group_info::RETRY_KILL_KILLED;
-      p->to_kill->awake(KILL_CONNECTION);
-      mysql_mutex_unlock(&p->to_kill->LOCK_thd_data);
+      mysql_cond_broadcast(&to_kill->COND_wakeup_ready);
+      mysql_mutex_unlock(&to_kill->LOCK_wakeup_ready);
       my_free(p);
     }
     mysql_mutex_lock(&LOCK_slave_background);
@@ -388,8 +392,8 @@ slave_background_kill_request(THD *to_kill)
     mysql_mutex_lock(&LOCK_slave_background);
     p->next= slave_background_kill_list;
     slave_background_kill_list= p;
-    mysql_mutex_unlock(&LOCK_slave_background);
     mysql_cond_signal(&COND_slave_background);
+    mysql_mutex_unlock(&LOCK_slave_background);
   }
 }
 

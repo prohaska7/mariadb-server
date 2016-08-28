@@ -1766,7 +1766,7 @@ static void tokudb_lock_timeout_callback(
     }
 }
 
-extern "C" void thd_rpl_deadlock_check(MYSQL_THD thd, MYSQL_THD other_thd);
+extern "C" int thd_rpl_deadlock_check(MYSQL_THD thd, MYSQL_THD other_thd);
 
 struct tokudb_search_txn_thd {
     bool match_found;
@@ -1818,8 +1818,8 @@ static void tokudb_lock_wait_needed_callback(
     THD *blocking_thd;
     if (tokudb_txn_id_to_thd(requesting_txnid, &requesting_thd) &&
         tokudb_txn_id_to_thd(blocking_txnid, &blocking_thd)) {
-        sql_print_information("%s report wait for %p %" PRIu64 " %p %" PRIu64, __FUNCTION__, requesting_thd, requesting_txnid, blocking_thd, blocking_txnid);
-        thd_rpl_deadlock_check (requesting_thd, blocking_thd);
+        int res = thd_rpl_deadlock_check (requesting_thd, blocking_thd);
+        sql_print_information("%s report wait for %p %" PRIu64 " %p %" PRIu64 " -> returns killed=%d", __FUNCTION__, requesting_thd, requesting_txnid, blocking_thd, blocking_txnid, res);
     } else
         sql_print_information("%s no report %" PRIu64 " %" PRIu64, __FUNCTION__, requesting_txnid, blocking_txnid);
 }
