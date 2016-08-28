@@ -120,11 +120,11 @@ wait_for_pending_deadlock_kill(THD *thd, rpl_group_info *rgi)
 {
   PSI_stage_info old_stage;
 
-  mysql_mutex_lock(&thd->LOCK_thd_data);
-  thd->ENTER_COND(&thd->COND_wakeup_ready, &thd->LOCK_thd_data,
+  mysql_mutex_lock(&thd->LOCK_wakeup_ready);
+  thd->ENTER_COND(&thd->COND_wakeup_ready, &thd->LOCK_wakeup_ready,
                   &stage_waiting_for_deadlock_kill, &old_stage);
   while (rgi->killed_for_retry == rpl_group_info::RETRY_KILL_PENDING)
-    mysql_cond_wait(&thd->COND_wakeup_ready, &thd->LOCK_thd_data);
+    mysql_cond_wait(&thd->COND_wakeup_ready, &thd->LOCK_wakeup_ready);
   thd->EXIT_COND(&old_stage);
 }
 
