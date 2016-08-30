@@ -151,7 +151,6 @@ bool lock_request::deadlock_exists(const txnid_set &conflicts) {
     bool deadlock = wait_graph.cycle_exists_from_txnid(m_txnid);
 
     wait_graph.destroy();
-
     return deadlock;
 }
 
@@ -240,10 +239,11 @@ int lock_request::wait(uint64_t wait_time_ms, uint64_t killed_time_ms,
         GrowableArray<TXNID> conflicts_collector;
         conflicts_collector.init();
         retry(&conflicts_collector);
-        if (m_state != state::PENDING) {
+        if (m_state == state::PENDING) {
+            report_waits(&conflicts_collector, lock_wait_callback);
+        } else {
             fprintf(stderr, "%s %u %s retry %p %" PRIu64 " worked\n", __FILE__, __LINE__, "lock_request::wait", this, m_txnid);
         }
-        report_waits(&conflicts_collector, lock_wait_callback);
         conflicts_collector.deinit();
     }
 
