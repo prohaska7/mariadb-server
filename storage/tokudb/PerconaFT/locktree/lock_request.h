@@ -83,12 +83,12 @@ public:
     // effect: Tries to acquire a lock described by this lock request.
     // returns: The return code of locktree::acquire_[write,read]_lock()
     //          or DB_LOCK_DEADLOCK if this request would end up deadlocked.
-    int start(void (*lock_wait_callback)(void *, TXNID, TXNID) = nullptr);
+    int start(void);
 
     // effect: Sleeps until either the request is granted or the wait time expires.
     // returns: The return code of locktree::acquire_[write,read]_lock()
     //          or simply DB_LOCK_NOTGRANTED if the wait time expired.
-    int wait(uint64_t wait_time_ms, void (*lock_wait_callback)(void *, TXNID, TXNID) = nullptr);
+    int wait(uint64_t wait_time_ms);
     int wait(uint64_t wait_time_ms, uint64_t killed_time_ms, int (*killed_callback)(void),
              void (*lock_wait_callback)(void *, TXNID, TXNID) = nullptr);
 
@@ -110,21 +110,18 @@ public:
     // effect: Retries all of the lock requests for the given locktree.
     //         Any lock requests successfully restarted is completed and woken up.
     //         The rest remain pending.
-    static void retry_all_lock_requests(locktree *lt, void (*lock_wait_callback)(void *, TXNID, TXNID) = nullptr);
+    static void retry_all_lock_requests(locktree *lt, void (*lock_wait_callback)(void *, TXNID, TXNID) = nullptr, void (*after_retry_test_callback)(void) = nullptr);
 
     void set_start_test_callback(void (*f)(void));
+    void set_start_before_pending_test_callback(void (*f)(void));
     void set_retry_test_callback(void (*f)(void));
 
     void *get_extra(void) const;
 
-    int get_state(void) const;
-
     void kill_waiter(void);
-
     static void kill_waiter(locktree *lt, void *extra);
 
 private:
-
     enum state {
         UNINITIALIZED,
         INITIALIZED,
@@ -194,16 +191,17 @@ private:
     // returns: True if this lock request is in deadlock with the given conflicts set
     bool deadlock_exists(const txnid_set &conflicts);
 
+    void copy_keys(void);
+
+    static int find_by_txnid(lock_request * const &request, const TXNID &txnid);
+
     // Report list of conflicts to lock wait callback.
     static void report_waits(GrowableArray<TXNID> *wait_conflicts,
                              void (*lock_wait_callback)(void *, TXNID, TXNID));
     void add_conflicts_to_waits(txnid_set *conflicts, GrowableArray<TXNID> *wait_conflicts);
 
-    void copy_keys(void);
-
-    static int find_by_txnid(lock_request * const &request, const TXNID &txnid);
-
     void (*m_start_test_callback)(void);
+    void (*m_start_before_pending_test_callback)(void);
     void (*m_retry_test_callback)(void);
 
     friend class lock_request_unit_test;
