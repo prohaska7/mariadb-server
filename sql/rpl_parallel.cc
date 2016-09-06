@@ -674,7 +674,6 @@ retry_event_group(rpl_group_info *rgi, rpl_parallel_thread *rpt,
   Format_description_log_event *description_event= NULL;
 
 do_retry:
-
   event_count= 0;
   err= 0;
   errmsg= NULL;

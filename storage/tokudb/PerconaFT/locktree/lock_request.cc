@@ -212,7 +212,9 @@ int lock_request::wait(uint64_t wait_time_ms, uint64_t killed_time_ms, int (*kil
         GrowableArray<TXNID> conflicts_collector;
         conflicts_collector.init();
         retry(&conflicts_collector);
-        report_waits(&conflicts_collector, lock_wait_callback);
+        if (m_state == state::PENDING) {
+            report_waits(&conflicts_collector, lock_wait_callback);
+        }
         conflicts_collector.deinit();
     }
 

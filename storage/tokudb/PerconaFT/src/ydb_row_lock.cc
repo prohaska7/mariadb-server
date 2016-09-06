@@ -226,7 +226,6 @@ int toku_db_wait_range_lock(DB *db, DB_TXN *txn, toku::lock_request *request) {
     if (r == 0) {
         db_txn_note_row_lock(db, txn_anc, left_key, right_key);
     } else if (r == DB_LOCK_NOTGRANTED) {
-    // ToDo: handle lock_wait_needed callback here?
         lock_timeout_callback callback = txn->mgrp->i->lock_wait_timeout_callback;
         if (callback != nullptr) {
             callback(db, txn_anc->id64(txn_anc), left_key, right_key,
